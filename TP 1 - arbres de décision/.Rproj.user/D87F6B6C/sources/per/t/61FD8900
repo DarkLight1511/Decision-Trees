@@ -1,0 +1,33 @@
+{
+    "id": "61FD8900",
+    "path": "//home-ens.univ-ubs.fr/e2504164/Github/Decesion-Trees/TP 1 - arbres de décision/sujet_TP1.Rmd",
+    "project_path": "sujet_TP1.Rmd",
+    "type": "r_markdown",
+    "hash": "1251500373",
+    "contents": "",
+    "dirty": false,
+    "created": 1790175325430.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "chunk_output_type": "console",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "146,69",
+        "scrollLine": "137",
+        "rmdVisualMode": "false",
+        "rmdVisualCollapsedChunks": "",
+        "rmdVisualModeLocation": "2700:1376.800048828125",
+        "rmdVisualWrapConfigured": "true",
+        "docOutlineVisible": "0",
+        "last_setup_crc32": "eebf7ae1fe2c1b31"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1790179403,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1790179403954,
+    "read_only": false,
+    "read_only_alternatives": []
+}
