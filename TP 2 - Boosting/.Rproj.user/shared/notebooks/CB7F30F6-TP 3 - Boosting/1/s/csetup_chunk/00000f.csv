@@ -1,0 +1,5 @@
+"0","rm(list = ls()) # On nettoie l'espace de travail"
+"0","# Options pour le rmarkdown"
+"0","knitr::opts_chunk$set(echo = TRUE, warning = FALSE,"
+"0","                      comment = NA,"
+"0","                      eval = FALSE, message = FALSE)"

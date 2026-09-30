@@ -1,0 +1,3 @@
+"0","library(kernlab)"
+"0","data(spam)"
+"0","View(spam)"

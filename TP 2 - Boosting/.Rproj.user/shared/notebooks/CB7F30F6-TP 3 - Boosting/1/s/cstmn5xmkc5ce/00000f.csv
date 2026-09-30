@@ -1,0 +1,3 @@
+"0","library(rsample) # to split the dataset into a test set and a train set"
+"2","Erreur dans library(rsample) : aucun package nommé ‘rsample’ n'est trouvé
+"
