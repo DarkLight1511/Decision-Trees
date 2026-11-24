@@ -17,10 +17,10 @@ output: # Différents formats de sorties
     toc_float: yes # La table des matières "flotte à droite" (seulement en html)
     highlight: tango # Apparence du code
 header-includes:
-  # Inclusion d'options (si on compile en pdf)
   - \renewcommand{\contentsname}{Table des matières} # Nom de la table des matieres
   - \newcommand{\bX}{\mathbf X}
   - \newcommand{\bx}{{\mathbf x}}
+  # Inclusion d'options (si on compile en pdf)
 encoding: UTF-8 # Encodage
 editor_options: 
   chunk_output_type: console
@@ -73,9 +73,18 @@ Here, we study data of high resolution aerial images for 3 types of land cover (
 
 ```{r load_data}
 #You need to define your workspace before.
-load("./TP2_train.RData")
-load("./TP2_test.RData")
+load("TP2_train.RData")
+load("TP2_test.RData")
 ```
+
+```{r}
+dim(train)   # 192 lignes, 148 colonnes
+dim(test)    #  60 lignes, 148 colonnes
+names(train)[1:22]
+table(sapply(train, class))      # types des colonnes
+sum(is.na(train)); sum(is.na(test))   # valeurs manquantes
+```
+
 
 
 - **Question 2 [code + interpretation].** First, fit a random forest named \texttt{rf1} to explain the variable `class` by all other variables. Use the function \texttt{randomForest()} (included the package of the same name) with the default values for parameters. Make sure that you analysis is reproducible.
@@ -129,7 +138,15 @@ ggplot(as.data.frame(errors), aes(x = 1:nrow(errors), y = errors[[1]])) +geom_li
  Comment on it.
  
 ```{r}
+set.seed(seed)
+rf3 <- randomForest(class ~ ., data = train, mtry = ncol(train) - 1)  # mtry = 147
+rf3
 
+pred_rf3 <- predict(rf3, newdata = test, type = "response")
+cm_rf3 <- confusionMatrix(pred_rf3, test$class)
+cm_rf3
+err_test_rf3 <- mean(pred_rf3 != test$class)
+err_test_rf3
 ```
  
  

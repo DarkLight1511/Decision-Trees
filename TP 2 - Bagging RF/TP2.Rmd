@@ -20,7 +20,7 @@ header-includes:
   - \newcommand{\bx}{{\mathbf x}}
 encoding: UTF-8
 editor_options:
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ```{r setup, include=FALSE}
@@ -33,20 +33,20 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, comment = NA,
                       fig.align = "center", fig.width = 7, fig.height = 4.5)
 ```
 
-# Avant de commencer : remarques sur le sujet {-}
+# Avant de commencer : remarques sur le sujet {.unnumbered}
 
 Quelques points à connaître pour que le code tourne et pour éviter les pièges :
 
-1. **`eval = FALSE`** dans le chunk `setup` du sujet : rien ne s'exécute au moment du knit. Ici on le passe à `TRUE`.
-2. **Les modalités de `class` contiennent un espace final** : `"grass "`, `"soil "`, `"tree "`. Ce n'est pas bloquant (train et test ont les mêmes niveaux), mais on les nettoie avec `trimws()` pour avoir des sorties lisibles.
-3. **Les questions 2 et 3 se recouvrent** (la fin de la Q2 demande déjà `rf1bis` avec `ranger`). On traite `randomForest` en Q2 et `ranger` en Q3.
-4. **Optimisation bayésienne (Q7) : le code du sujet a un bug.** `rBayesianOptimization::BayesianOptimization()` **maximise** le `Score`, or la fonction renvoie l'erreur de classification. L'algorithme cherche donc la combinaison qui donne l'erreur la plus *grande* (c'est pour ça qu'il finit bloqué sur `mtry = 1`). De plus `N_TREES = 5` : des forêts de 5 arbres. On l'explique et on donne la version corrigée.
-5. **`rf4` doit être construit avec `randomForest(..., importance = TRUE)`** pour que `rf4$importance` (Q11) et `varImpPlot()` (Q12) fonctionnent comme prévu (`varImpPlot` ne marche pas sur un objet `ranger`).
-6. Les chunks `{block, type = "Correction"}` du sujet font planter la compilation **PDF** (environnement LaTeX `Correction` non défini). On les remplace par de simples blocs de texte.
+1.  **`eval = FALSE`** dans le chunk `setup` du sujet : rien ne s'exécute au moment du knit. Ici on le passe à `TRUE`.
+2.  **Les modalités de `class` contiennent un espace final** : `"grass "`, `"soil "`, `"tree "`. Ce n'est pas bloquant (train et test ont les mêmes niveaux), mais on les nettoie avec `trimws()` pour avoir des sorties lisibles.
+3.  **Les questions 2 et 3 se recouvrent** (la fin de la Q2 demande déjà `rf1bis` avec `ranger`). On traite `randomForest` en Q2 et `ranger` en Q3.
+4.  **Optimisation bayésienne (Q7) : le code du sujet a un bug.** `rBayesianOptimization::BayesianOptimization()` **maximise** le `Score`, or la fonction renvoie l'erreur de classification. L'algorithme cherche donc la combinaison qui donne l'erreur la plus *grande* (c'est pour ça qu'il finit bloqué sur `mtry = 1`). De plus `N_TREES = 5` : des forêts de 5 arbres. On l'explique et on donne la version corrigée.
+5.  **`rf4` doit être construit avec `randomForest(..., importance = TRUE)`** pour que `rf4$importance` (Q11) et `varImpPlot()` (Q12) fonctionnent comme prévu (`varImpPlot` ne marche pas sur un objet `ranger`).
+6.  Les chunks `{block, type = "Correction"}` du sujet font planter la compilation **PDF** (environnement LaTeX `Correction` non défini). On les remplace par de simples blocs de texte.
 
 > **À propos des chiffres cités dans cette correction.** Ils donnent l'ordre de grandeur attendu sur ces données. Selon ta version de R et des packages, tes valeurs exactes peuvent différer de 1 à 3 points de pourcentage : sur un test de 60 observations, **une seule erreur de plus = 1,7 point d'erreur**. Ce qui compte, ce sont les tendances et l'interprétation.
 
-# Librairies utilisées {-}
+# Librairies utilisées {.unnumbered}
 
 ```{r libraries}
 library(ggplot2)      # graphiques
@@ -72,7 +72,7 @@ seed <- 2026
 
 Toute fonction qui utilise de l'aléa (bootstrap, tirage des variables, découpage en folds de validation croisée...) doit être précédée de `set.seed(seed)` (ou recevoir l'argument `seed = seed` pour `ranger`), sinon on obtient des résultats différents à chaque exécution.
 
-# Exercice {-}
+# Exercice {.unnumbered}
 
 On étudie des images aériennes haute résolution de 3 types d'occupation du sol (*soil* = sol nu, *grass* = herbe, *tree* = arbres). Les variables décrivent chaque segment d'image : information spectrale, taille, forme et texture, calculées à plusieurs échelles.
 
@@ -80,8 +80,8 @@ On étudie des images aériennes haute résolution de 3 types d'occupation du so
 
 ```{r load_data}
 # Définir le répertoire de travail avant (setwd() ou projet RStudio)
-load("./TP2_train.RData")
-load("./TP2_test.RData")
+load("TP2_train.RData")
+load("TP2_test.RData")
 
 # Nettoyage des modalités (espace final dans "grass ", "soil ", "tree ")
 levels(train$class) <- trimws(levels(train$class))
@@ -150,13 +150,13 @@ train %>%
 - **Ce n'est pas un problème pour les arbres et les forêts** : un découpage $X_j \le s$ ne dépend que de l'ordre des valeurs. Les arbres sont donc invariants par transformation monotone des variables. **Pas besoin de centrer-réduire ni de transformer** (contrairement aux SVM, au k-NN ou aux réseaux de neurones), et les valeurs extrêmes des variables explicatives ont peu d'influence.
 - Certaines variables séparent nettement les classes. Moyennes par classe sur le train :
 
-| classe | NDVI | Mean_R | Mean_NIR | SD_G_40 |
-|---|---|---|---|---|
-| grass | 0,17 | 141 | 150 | 14 |
-| soil | -0,01 | 213 | 211 | 12 |
-| tree | 0,29 | 99 | 113 | 25 |
+| classe | NDVI  | Mean_R | Mean_NIR | SD_G_40 |
+|--------|-------|--------|----------|---------|
+| grass  | 0,17  | 141    | 150      | 14      |
+| soil   | -0,01 | 213    | 211      | 12      |
+| tree   | 0,29  | 99     | 113      | 25      |
 
-  Le sol nu est très réfléchissant dans le rouge et a un NDVI quasi nul (pas de chlorophylle) ; les arbres ont le NDVI le plus élevé, sont plus sombres et ont une texture plus hétérogène (écart-type `SD_G` plus élevé). *Grass* est intermédiaire, et c'est donc la classe qu'on s'attend à confondre le plus avec *tree*.
+Le sol nu est très réfléchissant dans le rouge et a un NDVI quasi nul (pas de chlorophylle) ; les arbres ont le NDVI le plus élevé, sont plus sombres et ont une texture plus hétérogène (écart-type `SD_G` plus élevé). *Grass* est intermédiaire, et c'est donc la classe qu'on s'attend à confondre le plus avec *tree*.
 
 ### Distribution de la variable cible
 
@@ -177,10 +177,10 @@ bind_rows(mutate(train, jeu = "train"), mutate(test, jeu = "test")) %>%
 
 **Réponse.**
 
-| | grass | soil | tree |
-|---|---|---|---|
+|                 | grass       | soil        | tree        |
+|-----------------|-------------|-------------|-------------|
 | train (n = 192) | 83 (43,2 %) | 20 (10,4 %) | 89 (46,4 %) |
-| test (n = 60) | 29 (48,3 %) | 14 (23,3 %) | 17 (28,3 %) |
+| test (n = 60)   | 29 (48,3 %) | 14 (23,3 %) | 17 (28,3 %) |
 
 - La cible est **qualitative à 3 modalités** : classification supervisée **multiclasse**.
 - Dans le train, les classes sont **déséquilibrées** : *soil* est minoritaire (20 observations, 10 %). Le modèle verra peu d'exemples de sol, et l'erreur globale sera surtout portée par les classes majoritaires. Il faudra regarder l'erreur **par classe**, pas seulement l'erreur globale.
@@ -207,7 +207,7 @@ args(randomForest:::randomForest.default)
 Paramètres principaux de `randomForest()` :
 
 | paramètre | rôle | valeur par défaut | ici |
-|---|---|---|---|
+|----|----|----|----|
 | `ntree` | nombre d'arbres | 500 | 500 |
 | `mtry` | nb de variables tirées au hasard à chaque nœud | $\lfloor\sqrt p\rfloor$ en classification, $\max(\lfloor p/3\rfloor, 1)$ en régression | $\lfloor\sqrt{147}\rfloor = 12$ |
 | `replace` | tirage avec remise | `TRUE` | bootstrap |
@@ -218,7 +218,7 @@ Paramètres principaux de `randomForest()` :
 
 **Sont-elles conformes à Breiman (2001) ?** **Oui.** L'algorithme de Breiman consiste à :
 
-- construire chaque arbre sur un **échantillon bootstrap de taille $n$** (tirage avec remise) ;
+- construire chaque arbre sur un **échantillon bootstrap de taille** $n$ (tirage avec remise) ;
 - à chaque nœud, tirer **`mtry` variables au hasard** et chercher la meilleure coupure parmi elles uniquement ;
 - faire pousser les arbres **au maximum, sans élagage** (feuilles pures : `nodesize = 1` en classification) ;
 - agréger par **vote majoritaire** (classification) ou par moyenne (régression).
@@ -289,7 +289,7 @@ rf1bis$prediction.error   # erreur OOB
 ### Valeurs par défaut de `ranger()`
 
 | paramètre `ranger` | équivalent `randomForest` | défaut |
-|---|---|---|
+|----|----|----|
 | `num.trees` | `ntree` | 500 |
 | `mtry` | `mtry` | $\lfloor\sqrt p\rfloor$ = 12 |
 | `min.node.size` | `nodesize` (proche) | 1 en classification, 5 en régression, 10 en probabilité |
@@ -364,7 +364,7 @@ err_test_rf1
 - L'intervalle de confiance est **large** (environ $\pm 9$ points) : avec 60 observations, l'erreur test est imprécise.
 - L'accuracy est très supérieure au NIR (48 %), avec une p-value très faible : le modèle apporte énormément d'information. Kappa autour de 0,75-0,8 : très bon accord.
 - Par classe :
-  - les erreurs viennent surtout de **confusions grass $\leftrightarrow$ tree** (typiquement 4 *grass* prédits *tree*) ;
+  - les erreurs viennent surtout de **confusions grass** $\leftrightarrow$ tree (typiquement 4 *grass* prédits *tree*) ;
   - *soil* : bonne précision mais quelques sols prédits *grass* (sensibilité de l'ordre de 85 %). C'est la classe la moins représentée dans le train (20 obs.), et elle est sur-représentée dans le test (14 obs.).
 - **Pourquoi l'erreur test peut être un peu plus élevée que l'OOB :** la répartition des classes diffère entre train et test (cf. Q1), et le test est petit.
 
@@ -423,7 +423,7 @@ mean(predict(rf2, test) != test$class)
 
 ## Question 6 -- Bagging (`rf3`)
 
-**Réponse.** Le **bagging** de CART (Breiman 1996) consiste à agréger des arbres construits sur des échantillons bootstrap, **en considérant toutes les variables à chaque nœud**. Une forêt aléatoire avec **`mtry` = $p$ = 147** est donc exactement du bagging (le tirage aléatoire des variables disparaît : on « tire » les 147 variables).
+**Réponse.** Le **bagging** de CART (Breiman 1996) consiste à agréger des arbres construits sur des échantillons bootstrap, **en considérant toutes les variables à chaque nœud**. Une forêt aléatoire avec **`mtry` =** $p$ = 147 est donc exactement du bagging (le tirage aléatoire des variables disparaît : on « tire » les 147 variables).
 
 ```{r rf3}
 set.seed(seed)
@@ -545,7 +545,7 @@ print(res_grid, n = 15)
 
 Sortie donnée dans le sujet (15 meilleures combinaisons sur 72) :
 
-```text
+``` text
     mtry node_size sampe_size mean_CV_error sd_CV_error
  1    50        10      1             0.116     0.00866
  2    75        10      1             0.118     0.0129
@@ -580,8 +580,8 @@ res_grid %>%
 
 **Plusieurs répétitions.** L'erreur de validation croisée d'une combinaison est une **variable aléatoire**. Elle dépend :
 
-1. du découpage aléatoire des données en 5 folds ;
-2. de l'aléa de la forêt (bootstrap et tirage des variables à chaque nœud).
+1.  du découpage aléatoire des données en 5 folds ;
+2.  de l'aléa de la forêt (bootstrap et tirage des variables à chaque nœud).
 
 Avec $n = 192$, chaque fold de validation contient environ 38 observations : **une erreur de classification en plus = 2,6 points d'erreur sur ce fold**. Une seule validation croisée donnerait donc un classement des combinaisons largement dû au hasard du découpage. En répétant l'expérience $B = 10$ fois et en moyennant :
 
@@ -590,9 +590,9 @@ Avec $n = 192$, chaque fold de validation contient environ 38 observations : **u
 
 **Des graines aléatoires.**
 
-1. **Reproductibilité** : en fixant les graines, on retrouve exactement les mêmes folds et les mêmes forêts à chaque exécution (et les mêmes résultats que la correction).
-2. **Comparaison appariée et équitable** : pour une répétition donnée, **toutes les combinaisons utilisent les mêmes folds** (même graine, puisque `seeds_tune` est une dimension de `expand.grid`) et la même graine pour `ranger`. Les différences d'erreur entre combinaisons viennent donc des hyperparamètres, et pas d'un découpage plus ou moins favorable (technique des « nombres aléatoires communs »).
-3. **Répétitions différentes entre elles** : les 10 graines sont tirées **sans remise**, donc les 10 répétitions utilisent 10 découpages différents, ce qui fait que la moyenne a bien un sens.
+1.  **Reproductibilité** : en fixant les graines, on retrouve exactement les mêmes folds et les mêmes forêts à chaque exécution (et les mêmes résultats que la correction).
+2.  **Comparaison appariée et équitable** : pour une répétition donnée, **toutes les combinaisons utilisent les mêmes folds** (même graine, puisque `seeds_tune` est une dimension de `expand.grid`) et la même graine pour `ranger`. Les différences d'erreur entre combinaisons viennent donc des hyperparamètres, et pas d'un découpage plus ou moins favorable (technique des « nombres aléatoires communs »).
+3.  **Répétitions différentes entre elles** : les 10 graines sont tirées **sans remise**, donc les 10 répétitions utilisent 10 découpages différents, ce qui fait que la moyenne a bien un sens.
 
 ### Commentaire des résultats de la grille
 
@@ -607,12 +607,12 @@ Avec $n = 192$, chaque fold de validation contient environ 38 observations : **u
 
 ### Optimisation bayésienne
 
-**Principe.** On cherche à minimiser une fonction $f(\theta)$ (l'erreur CV) coûteuse à évaluer, où $\theta = $ (`mtry`, `min.node.size`, `sample.fraction`). L'algorithme :
+**Principe.** On cherche à minimiser une fonction $f(\theta)$ (l'erreur CV) coûteuse à évaluer, où \$\theta = \$ (`mtry`, `min.node.size`, `sample.fraction`). L'algorithme :
 
-1. évalue $f$ en quelques points tirés au hasard (`init_points = 5`) ;
-2. ajuste un **modèle de substitution** (processus gaussien) de $f$ à partir des points déjà évalués : il donne pour chaque $\theta$ une prédiction $\mu(\theta)$ et une incertitude $\sigma(\theta)$ ;
-3. choisit le prochain point à évaluer en maximisant une **fonction d'acquisition**. Ici `acq = "ucb"` (*upper confidence bound*) : $\mu(\theta) + \kappa\,\sigma(\theta)$. Elle arbitre entre **exploitation** (aller là où le modèle prédit un bon score) et **exploration** (aller là où l'incertitude est grande) ;
-4. répète les étapes 2-3 `n_iter = 25` fois.
+1.  évalue $f$ en quelques points tirés au hasard (`init_points = 5`) ;
+2.  ajuste un **modèle de substitution** (processus gaussien) de $f$ à partir des points déjà évalués : il donne pour chaque $\theta$ une prédiction $\mu(\theta)$ et une incertitude $\sigma(\theta)$ ;
+3.  choisit le prochain point à évaluer en maximisant une **fonction d'acquisition**. Ici `acq = "ucb"` (*upper confidence bound*) : $\mu(\theta) + \kappa\,\sigma(\theta)$. Elle arbitre entre **exploitation** (aller là où le modèle prédit un bon score) et **exploration** (aller là où l'incertitude est grande) ;
+4.  répète les étapes 2-3 `n_iter = 25` fois.
 
 On fait donc **30 évaluations** au lieu de 72 combinaisons × 10 répétitions, dans un **espace continu**.
 
@@ -682,7 +682,7 @@ print(results)
 
 Sortie donnée dans le sujet (extrait) :
 
-```text
+``` text
     Round   mtry min.node.size sample.fraction Value
  1:     8  78.80          8.98            0.63  0.15
  2:     9  20.90         10.00            1.00  0.16
@@ -699,11 +699,13 @@ Sortie donnée dans le sujet (extrait) :
 
 **Commentaire des résultats.**
 
-1. **La meilleure combinaison trouvée** est `mtry` $\approx$ 79, `min.node.size` $\approx$ 9, `sample.fraction` $\approx$ 0,63, avec une erreur CV de 15 %. On retrouve la tendance de la grille : **`mtry` grand et `min.node.size` grand**. En revanche, la fraction d'échantillon optimale diffère (0,63 au lieu de 1).
-2. **Les erreurs (15 % à 26 %) sont bien plus élevées que celles de la grille (11,6 %-12,2 %).** Ce n'est pas parce que la méthode est moins bonne : **`N_TREES = 5`**, chaque « forêt » n'a que **5 arbres**. On a vu en Q2-Q3 qu'avec si peu d'arbres l'erreur est loin d'être stabilisée et très bruitée. Ces valeurs **ne sont donc pas comparables** à celles de la grille (500 arbres). Le commentaire du code le dit : il faut 500 arbres pour l'optimisation finale.
-3. **Comportement anormal à partir du round 15 :** les 16 dernières itérations sont toutes bloquées dans le coin `mtry = 1`, `min.node.size = 10`, `sample.fraction = 1`, avec **les pires erreurs (24-26 %)**. L'algorithme « exploite » donc une zone où l'erreur est maximale.
+1.  **La meilleure combinaison trouvée** est `mtry` $\approx$ 79, `min.node.size` $\approx$ 9, `sample.fraction` $\approx$ 0,63, avec une erreur CV de 15 %. On retrouve la tendance de la grille : **`mtry` grand et `min.node.size` grand**. En revanche, la fraction d'échantillon optimale diffère (0,63 au lieu de 1).
 
-   **Explication : `BayesianOptimization()` *maximise* le `Score`** (voir `?BayesianOptimization` : *« FUN: the function to be maximized »*). Or `cv_objective()` renvoie l'**erreur** de classification. L'algorithme cherche donc la combinaison qui donne la **plus grande erreur**, et il la trouve : `mtry = 1` (cohérent avec la Q5, `rf2` était le pire modèle). Les « bons » résultats du haut du tableau ne viennent que de la phase d'initialisation (rounds 1-5) et des premières explorations (rounds 6-14), pas d'une vraie optimisation. Le commentaire du code (*« sort results from highest to lowest accuracy »*) montre d'ailleurs la confusion entre erreur et accuracy.
+2.  **Les erreurs (15 % à 26 %) sont bien plus élevées que celles de la grille (11,6 %-12,2 %).** Ce n'est pas parce que la méthode est moins bonne : **`N_TREES = 5`**, chaque « forêt » n'a que **5 arbres**. On a vu en Q2-Q3 qu'avec si peu d'arbres l'erreur est loin d'être stabilisée et très bruitée. Ces valeurs **ne sont donc pas comparables** à celles de la grille (500 arbres). Le commentaire du code le dit : il faut 500 arbres pour l'optimisation finale.
+
+3.  **Comportement anormal à partir du round 15 :** les 16 dernières itérations sont toutes bloquées dans le coin `mtry = 1`, `min.node.size = 10`, `sample.fraction = 1`, avec **les pires erreurs (24-26 %)**. L'algorithme « exploite » donc une zone où l'erreur est maximale.
+
+    **Explication : `BayesianOptimization()`*maximise* le `Score`** (voir `?BayesianOptimization` : *« FUN: the function to be maximized »*). Or `cv_objective()` renvoie l'**erreur** de classification. L'algorithme cherche donc la combinaison qui donne la **plus grande erreur**, et il la trouve : `mtry = 1` (cohérent avec la Q5, `rf2` était le pire modèle). Les « bons » résultats du haut du tableau ne viennent que de la phase d'initialisation (rounds 1-5) et des premières explorations (rounds 6-14), pas d'une vraie optimisation. Le commentaire du code (*« sort results from highest to lowest accuracy »*) montre d'ailleurs la confusion entre erreur et accuracy.
 
 **Correction du code** : il suffit de renvoyer **moins l'erreur** (ou l'accuracy) et d'utiliser 500 arbres.
 
@@ -734,8 +736,8 @@ Avec cette version, on s'attend à ce que l'algorithme converge vers la zone `mt
 
 **Différences entre les deux stratégies de calibration :**
 
-| | Grille (grid search) | Optimisation bayésienne |
-|---|---|---|
+|   | Grille (grid search) | Optimisation bayésienne |
+|----|----|----|
 | Espace de recherche | discret (72 combinaisons fixées à l'avance) | continu (bornes), `mtry` et `min.node.size` arrondis |
 | Choix des points | tous évalués, indépendamment | séquentiel et adaptatif : chaque point dépend des précédents |
 | Nombre d'évaluations | 72 × 10 répétitions × 5 folds | 30 × 5 répétitions × 5 folds |
@@ -746,7 +748,7 @@ Avec cette version, on s'attend à ce que l'algorithme converge vers la zone `mt
 
 ## Question 8 -- Forêt `rf4` avec les hyperparamètres optimaux
 
-On retient la meilleure combinaison de la grille (la plus fiable car moyennée sur 10 répétitions avec 500 arbres) : **`mtry` = 50, taille minimale des nœuds = 10, échantillon bootstrap de taille $n$** (fraction 1). On peut aussi récupérer ces valeurs automatiquement :
+On retient la meilleure combinaison de la grille (la plus fiable car moyennée sur 10 répétitions avec 500 arbres) : **`mtry` = 50, taille minimale des nœuds = 10, échantillon bootstrap de taille** $n$ (fraction 1). On peut aussi récupérer ces valeurs automatiquement :
 
 ```{r best_params}
 best <- res_grid[1, ]
@@ -791,7 +793,7 @@ mean(predict(rf4_ranger, data = test)$predictions != test$class)
   - le gain attendu du tuning (environ 1 point en CV) est **plus petit que la précision de l'erreur test** (60 observations, intervalle de confiance d'environ $\pm 9$ points, une erreur = 1,7 point) ;
   - la répartition des classes est différente dans le test (beaucoup plus de *soil*) ;
   - le paramétrage optimal en CV est lui-même incertain (plateau, cf. Q7).
-- Les erreurs restent concentrées sur les **confusions *grass* $\leftrightarrow$ *tree*** ; *soil* est bien reconnue mais quelques sols sont classés en *grass*.
+- Les erreurs restent concentrées sur les **confusions *grass*** $\leftrightarrow$ *tree* ; *soil* est bien reconnue mais quelques sols sont classés en *grass*.
 - Leçon : **les forêts aléatoires sont robustes à leurs hyperparamètres**. Le tuning apporte un gain modeste, à condition d'éviter les mauvais réglages (comme `mtry = 1`).
 
 > Attention : `min.node.size` (ranger) et `nodesize` (randomForest) ne sont pas exactement définis de la même façon (cf. Q3). `rf4` n'est donc pas strictement identique au modèle évalué dans la grille, mais il en est très proche.
@@ -800,13 +802,11 @@ mean(predict(rf4_ranger, data = test)$predictions != test$class)
 
 **Méthodologie.** Un arbre CART maximal sur-apprend : il a une erreur d'apprentissage nulle mais une erreur de généralisation élevée. On le **calibre par élagage** (*cost-complexity pruning*) :
 
-1. **Construire l'arbre maximal** $T_{\max}$ (`cp = 0`, `minsplit = 2`) ;
-2. **Calculer la suite emboîtée de sous-arbres optimaux** : pour chaque valeur du paramètre de complexité $\alpha$, le sous-arbre $T_\alpha$ qui minimise le critère pénalisé
-$$R_\alpha(T) = R(T) + \alpha\,|T|,$$
-où $R(T)$ est l'erreur d'apprentissage et $|T|$ le nombre de feuilles. Quand $\alpha$ augmente, l'arbre est de plus en plus élagué. Dans `rpart`, le paramètre `cp` est $\alpha$ divisé par l'erreur de l'arbre racine ;
-3. **Choisir $\alpha$ (donc la taille de l'arbre) par validation croisée** à 10 folds (`xval = 10`) : pour chaque `cp`, `rpart` calcule l'erreur de validation croisée `xerror` ;
-4. Retenir le `cp` qui **minimise `xerror`**, ou appliquer la **règle du 1-SE** (le plus petit arbre dont `xerror` est inférieur à $\min(\mathtt{xerror}) + \mathtt{xstd}$ correspondant), qui donne un arbre plus simple et plus stable ;
-5. **Élaguer** l'arbre maximal avec ce `cp` (`prune()`), puis l'évaluer sur le test.
+1.  **Construire l'arbre maximal** $T_{\max}$ (`cp = 0`, `minsplit = 2`) ;
+2.  **Calculer la suite emboîtée de sous-arbres optimaux** : pour chaque valeur du paramètre de complexité $\alpha$, le sous-arbre $T_\alpha$ qui minimise le critère pénalisé $$R_\alpha(T) = R(T) + \alpha\,|T|,$$ où $R(T)$ est l'erreur d'apprentissage et $|T|$ le nombre de feuilles. Quand $\alpha$ augmente, l'arbre est de plus en plus élagué. Dans `rpart`, le paramètre `cp` est $\alpha$ divisé par l'erreur de l'arbre racine ;
+3.  **Choisir** $\alpha$ (donc la taille de l'arbre) par validation croisée à 10 folds (`xval = 10`) : pour chaque `cp`, `rpart` calcule l'erreur de validation croisée `xerror` ;
+4.  Retenir le `cp` qui **minimise `xerror`**, ou appliquer la **règle du 1-SE** (le plus petit arbre dont `xerror` est inférieur à $\min(\mathtt{xerror}) + \mathtt{xstd}$ correspondant), qui donne un arbre plus simple et plus stable ;
+5.  **Élaguer** l'arbre maximal avec ce `cp` (`prune()`), puis l'évaluer sur le test.
 
 La validation croisée est aléatoire, d'où le `set.seed()`.
 
@@ -897,8 +897,8 @@ mcnemar.test(table(ok_rf4, ok_tree))
 
 **Commentaire (ordre de grandeur attendu).**
 
-| | Bagging | rf4 | Arbre CART |
-|---|---|---|---|
+|   | Bagging | rf4 | Arbre CART |
+|----|----|----|----|
 | Erreur OOB / CV | environ 12-13 % | environ 12 % | environ 18-20 % |
 | Erreur test | environ 15-18 % | environ 13-18 % | environ 20-22 % |
 | Interprétabilité | faible (500 arbres) | faible (500 arbres) | **excellente** (quelques règles) |
@@ -922,12 +922,15 @@ head(importance(rf4))        # version standardisée (scale = TRUE par défaut)
 **Réponse.** Comme `rf4` a été construit avec `importance = TRUE`, `rf4$importance` est une matrice de **147 lignes (une par variable)** et **5 colonnes**. `head()` affiche les 6 premières variables (`BrdIndx`, `Area`, `Round`, `Bright`, `Compact`, `ShpIndx`).
 
 - **Colonnes `grass`, `soil`, `tree`** : **importance par permutation propre à chaque classe**, c'est-à-dire la diminution de l'accuracy OOB **sur les observations de cette classe** quand on permute la variable. Elles permettent de voir quelles variables servent à reconnaître quelle classe.
+
 - **`MeanDecreaseAccuracy` (MDA)** : importance par permutation globale. Pour chaque arbre $b$ :
-  1. on calcule l'erreur de l'arbre sur ses observations OOB ;
-  2. on **permute aléatoirement les valeurs de la variable $X_j$** dans l'échantillon OOB (ce qui casse le lien entre $X_j$ et la classe) et on recalcule l'erreur ;
-  3. on fait la différence.
+
+  1.  on calcule l'erreur de l'arbre sur ses observations OOB ;
+  2.  on **permute aléatoirement les valeurs de la variable** $X_j$ dans l'échantillon OOB (ce qui casse le lien entre $X_j$ et la classe) et on recalcule l'erreur ;
+  3.  on fait la différence.
 
   On moyenne cette augmentation d'erreur sur les 500 arbres. Plus la MDA est grande, plus la variable est utile pour prédire. Une valeur proche de 0, voire négative, signifie que la variable n'apporte rien.
+
 - **`MeanDecreaseGini` (MDG)** : **somme des diminutions de l'impureté de Gini** obtenues par toutes les coupures sur la variable $X_j$, moyennée sur les arbres. Elle mesure à quel point la variable a été utilisée pour rendre les nœuds plus purs.
 
 **Remarques :**
@@ -985,12 +988,12 @@ head(imp_df[order(-imp_df$MDG), ], 10)
 
 **Étapes à suivre :**
 
-1. **Calculer une importance fiable sur le train uniquement** : de préférence la MDA (permutation) plutôt que la MDG, éventuellement **moyennée sur plusieurs forêts** (plusieurs graines), parce que le classement est instable, surtout avec des variables corrélées.
-2. **Sélectionner les noms des 10 variables** ayant les plus fortes importances.
-3. **Restreindre les jeux de données** train **et** test à `class` + ces 10 variables (les mêmes colonnes dans les deux jeux).
-4. **Recalibrer les hyperparamètres** : le nombre de variables passe de 147 à 10, donc les anciennes valeurs n'ont plus de sens (`mtry` = 50 est impossible). Le défaut devient $\mathtt{mtry} = \lfloor\sqrt{10}\rfloor = 3$ ; on refait une grille (`mtry` de 1 à 10, `min.node.size`, `sample.fraction`) par validation croisée répétée ou avec l'erreur OOB.
-5. **Ajuster la forêt finale** sur le train réduit avec les hyperparamètres optimaux (500 arbres, graine fixée).
-6. **Évaluer sur le test réduit** (erreur, matrice de confusion) et **comparer** à `rf4` (147 variables) avec les mêmes critères (OOB, erreur test, erreurs par classe).
+1.  **Calculer une importance fiable sur le train uniquement** : de préférence la MDA (permutation) plutôt que la MDG, éventuellement **moyennée sur plusieurs forêts** (plusieurs graines), parce que le classement est instable, surtout avec des variables corrélées.
+2.  **Sélectionner les noms des 10 variables** ayant les plus fortes importances.
+3.  **Restreindre les jeux de données** train **et** test à `class` + ces 10 variables (les mêmes colonnes dans les deux jeux).
+4.  **Recalibrer les hyperparamètres** : le nombre de variables passe de 147 à 10, donc les anciennes valeurs n'ont plus de sens (`mtry` = 50 est impossible). Le défaut devient $\mathtt{mtry} = \lfloor\sqrt{10}\rfloor = 3$ ; on refait une grille (`mtry` de 1 à 10, `min.node.size`, `sample.fraction`) par validation croisée répétée ou avec l'erreur OOB.
+5.  **Ajuster la forêt finale** sur le train réduit avec les hyperparamètres optimaux (500 arbres, graine fixée).
+6.  **Évaluer sur le test réduit** (erreur, matrice de confusion) et **comparer** à `rf4` (147 variables) avec les mêmes critères (OOB, erreur test, erreurs par classe).
 
 **Point de vigilance (biais de sélection).** Si on sélectionne les 10 variables avec tout le train, puis qu'on estime l'erreur de la forêt réduite par OOB ou validation croisée **sur ce même train**, l'estimation est **optimiste** : les données ont servi à la fois à choisir les variables et à évaluer le modèle. Pour une estimation honnête, il faut **refaire la sélection à l'intérieur de chaque fold** de validation croisée (validation croisée imbriquée), ou se fier uniquement au test qui n'a servi à rien.
 
@@ -1035,7 +1038,7 @@ confusionMatrix(pred_rf5, test10$class)
 c(rf4_147var = err_test_rf4, rf5_10var = mean(pred_rf5 != test10$class))
 ```
 
-# Synthèse {-}
+# Synthèse {.unnumbered}
 
 - **Forêts aléatoires** = bagging d'arbres CART maximaux + **tirage aléatoire de `mtry` variables à chaque nœud** pour décorréler les arbres. Valeurs par défaut de Breiman (500 arbres, bootstrap de taille $n$, $\sqrt p$ variables, feuilles de taille 1) : elles sont reprises par `randomForest` et `ranger`.
 - **L'erreur OOB** est une estimation gratuite et fiable de l'erreur de généralisation : c'est le bon critère pour comparer des forêts sans toucher au test.
