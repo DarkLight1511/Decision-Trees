@@ -1,0 +1,423 @@
+---
+title: "Arbres de décision et méthodes ensemblistes"
+subtitle: "TP: bagging and random forests"
+author: "Audrey Poterie"
+date:  # Dates
+output: # Différents formats de sorties 
+  # Si on compile en pdf
+  # Si on compile en html
+  pdf_document:
+    toc: no # Montre-t-on la table des matières?
+    number_sections: yes # Numérote t'on les sections?
+    highlight: tango # Apparence du code
+  html_document: 
+    theme: journal # Theme (voir https://www.datadreaming.org/post/r-markdown-theme-gallery/)
+    toc: yes # Montre-t-on la table des matières?
+    number_sections: yes # Numérote t'on les sections?
+    toc_float: yes # La table des matières "flotte à droite" (seulement en html)
+    highlight: tango # Apparence du code
+header-includes:
+  # Inclusion d'options (si on compile en pdf)
+  - \renewcommand{\contentsname}{Table des matières} # Nom de la table des matieres
+  - \newcommand{\bX}{\mathbf X}
+  - \newcommand{\bx}{{\mathbf x}}
+encoding: UTF-8 # Encodage
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+rm(list = ls()) # On nettoie l'espace de travail
+# Options pour le rmarkdown
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE,
+                      comment = NA,
+                      eval = FALSE, message = FALSE)
+```
+
+
+# Libraries used {-}
+
+```{r libraries}
+library(ggplot2) # To plot the data
+library(Hmisc) # or library(psych) to built complete descriptive analysis table
+library(rpart) # To build CART trees
+library(rpart.plot) # To plot CART trees
+library(randomForest) # To build random forests
+library(ranger) # much faster implementation of Brieman’s random forest algorithm 
+library(mlr)
+library(OOBCurve)
+library(dplyr)
+library(tidyr)
+library(caret) # To calibrate and evaluate models
+```
+
+Use the documentation about the library \texttt{randomForest}: \url{https://cran.r-project.org/web/packages/randomForest/index.html}
+
+Use the documentation about the library \texttt{ranger}: \url{https://cran.r-project.org/web/packages/ranger/index.html}
+
+**Reproducible data analysis:** to get the same results when running the code several times and the same results than the correction, use the following random number generator: 
+```{r random_control}
+seed<-2026
+```
+
+# Exercise {-}
+
+
+Here, we study data of high resolution aerial images for 3 types of land cover (soil, grass, tree). Multi-scale spectral, size, shape, and texture information are used for classification.
+
+- **Question 1 [code + interpretation].** Load the data and have a look at it. 
+  - How many variables there are ? How many observations are there in the
+  train set and the test set ? 
+  - Have a look at the distribution of the variables. What could you say about
+  the distribution of the target variable ?
+
+```{r load_data}
+#You need to define your workspace before.
+load("./TP2_train.RData")
+load("./TP2_test.RData")
+```
+
+
+- **Question 2 [code + interpretation].** First, fit a random forest named \texttt{rf1} to explain the variable `class` by all other variables. Use the function \texttt{randomForest()} (included the package of the same name) with the default values for parameters. Make sure that you analysis is reproducible.
+  - Have a look at the default values for the parameters of the function. Do
+  they agree with the default values given by Breiman when introducing the
+  random forest algorithm ?
+  - What kind of statistical problem is it ? 
+  - Explain the output of \texttt{rf1}.
+  - Explain the output of \texttt{plot(rf1)}.
+  - Fit another random forest named \texttt{rf1bis} to explain the variable
+  `class` by all other variables by using \texttt{ranger()} with the default
+  values for parameters. Make sure that you analysis is reproducible. Have a
+  look at the output of the object \texttt{rf1bis} and by using the
+  documentation find the default values of the fucntion for the main
+  parameters of the forest.
+  - Run the following code and comment on it.
+
+
+
+```{r}
+
+```
+
+- **Question 3 [code + interpretation].** Same question that the previous one but use now the function \texttt{ranger()} (included the package of the same name) instead of the function \texttt{randomForest()}. Call this model \texttt{rf1bis}.
+  -Have a look at the default values for the parameters of the function. Do
+  they agree with the default values given by Breiman when introducing the
+  random forest algorithm ?
+  - Explain the output of \texttt{rf1bis}.
+  - Run the following code and comment on it.
+  
+```{r}
+set.seed(seed)
+rfbis2<- ranger(class ~ .,data=train,keep.inbag=TRUE)
+task <- mlr::makeClassifTask(data=train,target="class")
+errors <- OOBCurve(rfbis2,measures = list(mmce),task=task,data=train)
+ggplot(as.data.frame(errors), aes(x = 1:nrow(errors), y = errors[[1]])) +geom_line() +
+    labs(x = "Nombre d'arbres",y = "Erreur OOB") +theme_minimal()
+```
+
+
+- **Question 4 [code + interpretation].** Predict the class of each observation in the test set for `rf1` and compute the confusion matrix. You can use the function \texttt{predict()} (voir la doc pour l'option "type" à bien paramétrer) and the function \texttt{confusionMatrix()}. Comment your results.
+ 
+```{r}
+
+```
+
+	
+- **Question 5 [code + interpretation].** Fit the random forest \texttt{rf2} with \texttt{mtry}$=1$. 
+ - Explain the model you get. What does it mean ? 
+ - Use an appropriate criterion to compare \texttt{rf2} and \texttt{rf1}.
+ Comment on it.
+ 
+```{r}
+
+```
+ 
+ 
+
+- **Question 6 [interpretation + code].** What value for the parameter denoting the number of variables that are randomly selected before each split we have to use if we want to apply the bagging algorithm with CART trees ? 
+  - Build the associated model (called \texttt{rf3}) and compute the
+  `prediction error of this model based on the test set. 
+  - By using an appropriate criterion, compare \texttt{rf3} with the two
+  previous random forests.
+  
+```{r}
+
+```
+  
+  
+
+- **Question 7 [interpretation + code].** The previous questions highlight the importance of tuning the parameters of the function. This is what we will do now: we will tune the following parameters, namely, the bootstrap sample size, the number of randomly sampled variables, and the minimum node size. To tune these parameters, we will perform a grid search, which we will define first. This search can be quite time-consuming, and the `randomForest` function is not well suited to this task because its implementation is relatively slow. Instead, we can use the `ranger` function (from the `ranger` package), which is approximately six times faster than `randomForest`.
+
+  - *STEP 1 : Define the grid search*
+
+```{r}
+B = 10 # number of Monte Carlo repetitions
+set.seed(seed)
+seeds_tune<-sample(1:10000000,B,replace=FALSE)
+
+# hyperparameter grid search
+hyper_grid <- expand.grid(
+  mtry       = c(floor(sqrt(147)), 2, 25,50,75,147),
+  node_size  = c(1,2,5,10),
+  sampe_size = c( .632, .75, 1),
+  seeds_tune = seeds_tune
+)
+
+# total number of combinations
+nrow(hyper_grid)
+```
+
+  - *STEP 2: research across all combinations*. We repeat this experiment `B = 10` times. To ensure reproducibility, we generate B random seeds and store them in the vector `seeds_tune`. Note that we use 500 trees, as our previous examples showed that this number was sufficient to achieve a stable error rate.
+
+```{r}
+### Calculation of the cross-validation error using 5-fold cross-validation repeated 10 times for each hyperparameter combination
+library(ranger)
+hyper_grid$CV_error <- NA
+
+for (i in 1:nrow(hyper_grid)) {
+  
+  # Create 5 folds
+  set.seed(hyper_grid$seeds_tune[i])
+  folds <- sample(rep(1:5, length.out = nrow(train)))
+  fold_errors <- numeric(5)
+  
+  # On each fold do:
+  for (k in 1:5) {
+    
+    train_cv <- train[folds != k, ]
+    valid_cv <- train[folds == k, ]
+    
+    # Train model
+    model <- ranger(
+      formula       = class ~ .,
+      data          = train_cv,
+      num.trees     = 500,
+      mtry          = hyper_grid$mtry[i],
+      min.node.size = hyper_grid$node_size[i],
+      sample.fraction = hyper_grid$sampe_size[i],
+      seed          = hyper_grid$seeds_tune[i]
+    )
+    
+    # Prediction on validation fold
+    pred <- predict(
+      model,
+      data = valid_cv
+    )$predictions
+    
+    # Classification error
+    fold_errors[k] <- mean(pred != valid_cv$class)
+  }
+  
+  # Mean CV error
+  hyper_grid$CV_error[i] <- mean(fold_errors)
+}
+
+hyper_grid %>%
+  group_by(mtry, node_size, sampe_size) %>%
+  summarise(
+    mean_CV_error = mean(CV_error),
+    sd_CV_error = sd(CV_error)
+  ) %>%
+  arrange(mean_CV_error) %>%
+  print(n=15)
+```
+
+
+  - Why is it useful to perform several Monte Carlo repetitions? Why it is important to use random seeds ?
+  - Comment on the results.
+  
+```{block,type = "Correction", echo = TRUE}  
+*Output*
+`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by mtry, node_size, and sampe_size.
+ℹ Output is grouped by mtry and node_size.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(mtry, node_size, sampe_size))` for per-operation grouping instead.
+# A tibble: 72 × 5
+# Groups:   mtry, node_size [24]
+    mtry node_size sampe_size mean_CV_error sd_CV_error
+   <dbl>     <dbl>      <dbl>         <dbl>       <dbl>
+ 1    50        10      1             0.116     0.00866
+ 2    75        10      1             0.118     0.0129 
+ 3   147        10      1             0.118     0.0126 
+ 4    75         5      1             0.119     0.0123 
+ 5   147         5      1             0.120     0.0133 
+ 6   147         2      1             0.120     0.0139 
+ 7   147         1      1             0.120     0.0127 
+ 8    50         5      1             0.120     0.0115 
+ 9   147        10      0.632         0.121     0.0109 
+10   147         5      0.632         0.121     0.0110 
+11   147        10      0.75          0.121     0.0169 
+12    75         5      0.632         0.122     0.0100 
+13    75        10      0.75          0.122     0.00922
+14   147         1      0.632         0.122     0.0105 
+15   147         2      0.632         0.122     0.0105 
+# ℹ 57 more rows
+# ℹ Use `print(n = ...)` to see more rows
+```
+
+  - We now use a different strategy, based on Bayesian optimization, to find the best combination of hyperparameters.Run the code and comment on the results. What differences do you notice compared with the previous tuning strategy?
+  
+```{r}
+library(rBayesianOptimization)
+
+K <- 5
+B <- 5
+N_TREES <- 5  # Use 500 trees for the final optimization
+
+# 1. Generate stratified folds
+set.seed(123)
+folds_list <- lapply(1:B, function(r) {
+  folds <- integer(nrow(train))
+
+  for (cl in levels(train$class)) {
+    idx <- which(train$class == cl)
+    folds[idx] <- sample(rep(1:K, length.out = length(idx)))
+  }
+
+  folds
+})
+
+# 2. Define the classification error function
+classification_error <- function(y_true, y_pred) {
+  mean(y_true != y_pred)
+}
+
+# 3. Define the cross-validation objective function
+cv_objective <- function(mtry, min.node.size, sample.fraction) {
+
+  mtry <- round(mtry)
+  min.node.size <- round(min.node.size)
+
+  scores <- numeric(K * B)
+  i <- 1
+
+  for (b in 1:B) {
+    for (k in 1:K) {
+
+      train_cv <- train[folds_list[[b]] != k, , drop = FALSE]
+      test_cv  <- train[folds_list[[b]] == k, , drop = FALSE]
+
+      model <- ranger(
+        class ~ .,
+        data = train_cv,
+        num.trees = N_TREES,
+        mtry = mtry,
+        min.node.size = min.node.size,
+        sample.fraction = sample.fraction,
+        seed = 10000 + b * 100 + k,
+        num.threads = 1
+      )
+
+      pred <- predict(model, data = test_cv)$predictions
+
+      scores[i] <- classification_error(test_cv$class, pred)
+      i <- i + 1
+    }
+  }
+
+  list(Score = mean(scores), Pred = 0)
+}
+
+# 4. Perform Bayesian optimization
+set.seed(456)
+bayes_result <- BayesianOptimization(
+  FUN = cv_objective,
+  bounds = list(
+    mtry = c(1, 147),
+    min.node.size = c(1, 10),
+    sample.fraction = c(0.632, 1)
+  ),
+  init_points = 5,
+  n_iter = 25,
+  acq = "ucb",
+  verbose = TRUE
+)
+
+# 5. Extract and rank the results, sort results from highest to lowest accuracy and round hyperparameters and accuracy to two decimal places
+results <- bayes_result$History
+results <- results[order(results$Value, decreasing= FALSE), ]
+results$mtry <- round(results$mtry, 2)
+results$min.node.size <- round(results$min.node.size, 2)
+results$sample.fraction <- round(results$sample.fraction, 2)
+results$Value <- round(results$Value, 2)
+print(results)
+```
+  
+```{block,type = "Correction", echo = TRUE}  
+*Output*
+    Round   mtry min.node.size sample.fraction Value
+    <int>  <num>         <num>           <num> <num>
+ 1:     8  78.80          8.98            0.63  0.15
+ 2:     9  20.90         10.00            1.00  0.16
+ 3:     2  31.73          1.74            0.71  0.16
+ 4:     4 125.41          3.14            0.93  0.16
+ 5:     5 116.11          4.47            0.85  0.16
+ 6:    12 103.54          2.76            0.99  0.17
+ 7:    10 110.22          9.46            0.89  0.17
+ 8:     7  58.87          3.39            0.80  0.17
+ 9:     1  14.07          3.99            0.77  0.17
+10:     3 108.01          3.57            0.91  0.18
+11:     6  13.44          6.43            0.90  0.18
+12:    13   7.92          5.02            1.00  0.18
+13:    11  11.42          1.13            0.90  0.19
+14:    14   2.53          8.66            0.64  0.21
+15:    16   2.04          6.34            1.00  0.24
+16:    26   1.00         10.00            1.00  0.24
+17:    20   1.00         10.00            1.00  0.24
+18:    15   1.00          1.00            0.95  0.25
+19:    21   1.00         10.00            1.00  0.25
+20:    24   1.00         10.00            1.00  0.25
+21:    19   1.00         10.00            1.00  0.25
+22:    29   1.00         10.00            1.00  0.25
+23:    22   1.00         10.00            1.00  0.25
+24:    30   1.00         10.00            1.00  0.25
+25:    18   1.00         10.00            1.00  0.25
+26:    17   1.00         10.00            1.00  0.25
+27:    27   1.00         10.00            1.00  0.25
+28:    23   1.00         10.00            1.00  0.25
+29:    25   1.00         10.00            1.00  0.25
+30:    28   1.00         10.00            1.00  0.26
+```
+
+
+  
+- **Question 8 [interpretation + code].**  Fit another forest, called \texttt{rf4}, with the optimal values for the hyperparameters.
+  - Compute the prediction on the test set and the associated confusion
+  matrix. Comment.
+  
+```{r}
+
+```
+  
+  
+- **Question 9 [interpretation + code].**   Fit a CART tree on the training set. 
+  - Compute the prediction error of this tree based on the test set. 
+  - Explain our methodology (the size of the tree must be calibrated).
+  
+```{r}
+
+```
+  
+- **Question 10 [interpretation].** Use appropriate criteria and compare the bagging model, \texttt{rf4} and the single tree. 
+```{r}
+
+```
+
+
+- **Question 11 [interpretation].** Run this code and comment the output. 
+
+```{r command}
+head(rf4$importance)
+```
+
+- **Question 12 [code + interpretation].** Plot the 10 variables with the highest importance score. Interpret the results. Indication: use the function `varImpPlot`. 
+```{r}
+
+```
+
+
+- **Question 13 [interpretation].** List the steps that we need to perform if we want to build a random forest only on the 10 variables with the highest importance score. 
+```{r}
+
+```
